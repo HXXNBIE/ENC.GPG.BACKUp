@@ -27,17 +27,18 @@ createTar(){
   menuCreateTar=0
   until [[ $menuCreateTar == 1 ]];
   do
-    $MK_DIRS # Creating directories 
+    $MK_DIRS # Creating directories
     echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Enter the absolute path of the directory to be backed up:${RESET} ${RED}"
     read SRC_DIR
-    echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Is the '$SRC_DIR' path correct?? (y/n):${RESET} ${RED}"
+    echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Is the${RESET} ${BOLD}${CYAN}'$SRC_DIR'${RESET} ${BOLD}${YELLOW}path correct?${RESET} ${BOLD}${CYAN}(y/n):${RESET} ${RED}"
     read confirmPath
     if [ $confirmPath == "y" ]; then
-      echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Creating compressed directory. Please wait...${RESET} ${RED}"
+      echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${CYAN}Creating compressed directory. Please wait...${RESET} ${RED}"
       echo ""
-      tar -czf "$DEST_DIR/$ARCHIVE_NAME" "$SRC_DIR"
-      echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}The directory has been compressed successfully!${RESET} ${RED}"
-      sleep 3
+      tar -czf "$DEST_DIR/$ARCHIVE_NAME" -C "$(dirname "$SRC_DIR")" "$(basename "$SRC_DIR")"
+      echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${GREEN}The directory has been compressed successfully!${RESET} ${RED}"
+        echo -e -n "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Press Enter to continue_${RESET}${RED}"
+        read nextStep
       clear
       ((menuCreateTar=1))
     else
@@ -56,21 +57,21 @@ encDir(){
   do
     echo ""
     gpg --list-keys
-    echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}You have an active gpg key? (y/n):${RESET} ${RED}"
+    echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}You have an active gpg key?${RESET} ${BOLD}${CYAN}(y/n)${RESET}${BOLD}${YELLOW}:${RESET} ${RED}"
     read confirmKeyActive
     if [ $confirmKeyActive == "y" ]; then
-        echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Enter your public key ID (user@example.com):${RESET} ${RED}"
+        echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Enter your public key ID${RESET} ${BOLD}${CYAN}(user@example.com)${RESET}${BOLD}${YELLOW}:${RESET} ${RED}"
         read GPG_RECIPIENT
         gpg --yes --batch --output "$DEST_DIR/$ENCRYPTED_ARCHIVE" --encrypt --recipient "$GPG_RECIPIENT" "$DEST_DIR/$ARCHIVE_NAME"
-        sleep 2
-        clear
+	clear
         ((menuEncDir=1))
     elif [ $confirmKeyActive == "n" ]; then
-        echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Next you will create a new public gpg key:${RESET} ${RED} "
+        echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${CYAN}Next you will create a new public gpg key:${RESET} ${RED} "
         echo ""
         gpg --full-generate-key
-        echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Your key has been generated successfully${RESET} ${RED}"
-        sleep 2
+        echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${GREEN}Your key has been generated successfully${RESET} ${RED}"
+        echo -e -n "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Press enter to continue_${RESET}${RED}"
+	read nextStep
         clear
         ((menuEncDir=0))
     else
@@ -84,22 +85,23 @@ encDir(){
 
 # Final mssg
 finalMsg(){
-  echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Backup encrypted and stored as: $DEST_DIR/$ENCRYPTED_ARCHIVE ${RESET}${RED}"
-  echo -e -n "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Press Enter to continue _${RESET}${RED}"
+  echo -e "\n${BOLD}${RED}::${RESET} ${BOLD}${GREEN}Backup encrypted and stored as:${RESET} ${BOLD}${GREEN}$DEST_DIR/$ENCRYPTED_ARCHIVE ${RESET}${RED}"
+  echo -e -n "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Press Enter to continue_${RESET}${RED}"
+  read nextStep
   ls -l "$DEST_DIR/" > history/hist_file
   grep -oP 'backup.*' history/hist_file >> history/data.log
   sed -i "\$ s/\$/ Autor ID: $GPG_RECIPIENT/" history/data.log
-  clear
-  read endScript
 }
 
 # Remove the unencrypted file (.tar.gz)
 removeUnencryptedFile() {
+  echo ""
   echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Deleting temporary files...${RESET}${RED}"
   rm "$DEST_DIR/$ARCHIVE_NAME"
   rm "history/hist_file"
-  echo -e "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Temporary files have been deleted!${RESET}${RED}"
-  sleep 3
+  echo -e "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${GREEN}Temporary files have been deleted!${RESET}${RED}"
+  echo -e -n "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${GREEN}Press enter to continue_${RESET}${RED}"
+  read nextStep
   clear
 }
 
@@ -110,8 +112,8 @@ do
   clear
   echo -e "${RESET}${BOLD}${RED}$SHOW_HEADER${RESET}"
   echo -e "${RESET}${YELLOW}$SHOW_BANNER${RESET}"
-  echo -e "${BOLD}${RED}[1]${RESET} ${BOLD}${YELLOW}Run Script${RESET} ${BOLD}${RED}[2]${RESET} ${BOLD}${YELLOW}Exit${RESET}"
-  echo -e "${RESET}${BOLD}${YELLOW}-------------------------------------------------------------------------------${RESET}"
+  echo -e "${BOLD}${RED}[1]${RESET} ${BOLD}${YELLOW}Run Script${RESET}  ${BOLD}${RED}[2]${RESET} ${BOLD}${YELLOW}About this script${RESET} ${BOLD}${RED}[4]${RESET} ${BOLD}${YELLOW}Exit${RESET}"
+  echo -e "${RESET}${YELLOW}-------------------------------------------------------------------------------${RESET}"
   echo -e -n "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Choose an option:${RESET} ${RED}"
   read userOption
   if [ $userOption == 1 ]; then
@@ -119,9 +121,13 @@ do
     encDir
     finalMsg
     removeUnencryptedFile
-    ((homeMenu=1))
+    ((homeMenu=0))
   elif [ $userOption == 2 ]; then
-    echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Bye...${RESET}"
+    cat README.md
+    echo -e -n "${RESET}${BOLD}${RED}::${RESET} ${BOLD}${YELLOW}Press enter to continue_${RESET}${RED}"
+    read nextStep
+  elif [ $userOption == 4 ]; then
+    echo -e "\n${RESET}${BOLD}${RED}::${RESET} ${BOLD}${GREEN}Bye...${RESET}"
     sleep 2
     clear
     ((homeMenu=1))
